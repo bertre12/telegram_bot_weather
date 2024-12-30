@@ -1,5 +1,6 @@
 import requests
 from datetime import datetime
+import pytz
 from token_key import token_weather, token_bot
 from aiogram import Bot, types
 from aiogram.dispatcher import Dispatcher
@@ -11,6 +12,7 @@ requests - для упрощения работы с HTTP-запросами.
 datetime - для обработки времени и даты.
 token_key - ссылка на токен-ключи.
 aiogram - для работы бота.
+pytz - для корректного отображения временной зоны.
 """
 
 # Создание объект бота.
@@ -23,7 +25,8 @@ dp = Dispatcher(bot)
 # Функция для старта бота.
 @dp.message_handler(commands=["start"])
 async def start_command(message: types.Message):
-    await message.reply('Привет, напиши название города и получишь сводку о погоде на сегодня 😊')
+    await message.reply(
+        'Привет, напиши название города и получишь сводку о погоде на сегодня 😊')
 
 
 # Функция для запроса и вывода погоды в искомом городе.
@@ -42,12 +45,22 @@ async def get_weather(message: types.Message):
         time_sunrise = datetime.fromtimestamp(data['sys']['sunrise'])
         time_sunset = datetime.fromtimestamp(data['sys']['sunset'])
 
+        # Устанавливаем временную зону.
+        timezone = pytz.timezone('Europe/Minsk')  # Устанавливаем временную
+        # зону на Минск.
+        now = datetime.now(timezone)  # Получаем текущее время в нужной
+        # временной зоне.
+        time_sunrise = time_sunrise.astimezone(timezone)  # Приводим к нужной
+        # временной зоне.
+        time_sunset = time_sunset.astimezone(timezone)  # Приводим к нужной
+        # временной зоне.
+
         # Вывод ответа.
         await message.reply(f'Погода в данном городе - {city}\n'
                             f'Текущее время - {now:%d-%m-%Y %H:%M:%S}\n'
                             f'Температура - {temp_weather} C°\n'
-                            f'Восход солнца - {time_sunrise}\n'
-                            f'Заход солнца - {time_sunset}')
+                            f'Восход солнца - {time_sunrise:%d-%m-%Y %H:%M:%S}\n'
+                            f'Заход солнца - {time_sunset:%d-%m-%Y %H:%M:%S}')
 
     # Вывод исключения.
     except:
